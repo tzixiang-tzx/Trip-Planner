@@ -1,4 +1,5 @@
 import { HorizonScene } from "@/components/scenery";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const FEATURES = [
   { title: "Itinerary", note: "Day by day, hour by hour", tint: "text-sea" },
@@ -11,7 +12,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col justify-center gap-10 px-5 py-12 lg:flex-row lg:items-center lg:gap-16 lg:py-16">
       <section className="rise max-w-lg lg:flex-1">
-        <p className="label-xs">Wanderlist</p>
+        <div className="flex items-center justify-between gap-4">
+          <p className="label-xs">Wanderlist</p>
+          <ThemeToggle />
+        </div>
 
         <h1 className="mt-4 font-display text-[2.6rem] leading-[1.05] text-ink sm:text-6xl">
           Everything about the trip,

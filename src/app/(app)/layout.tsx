@@ -4,6 +4,7 @@ import { formatRange, tripStatus } from "@/lib/dates";
 import { Avatar } from "@/components/avatar";
 import { Nav } from "@/components/nav";
 import { SignOutButton } from "@/components/sign-out";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const TONE_CLASSES = {
   sun: "bg-sun-soft text-sun",
@@ -76,6 +77,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <div className="mx-auto flex w-full max-w-5xl items-center gap-4 px-5 py-2.5">
           <Nav />
           <div className="ml-auto flex shrink-0 items-center gap-2.5">
+            <ThemeToggle />
             <Avatar name={user.name} accent={user.accent} size="sm" />
             <div className="hidden text-right sm:block">
               <p className="text-xs font-medium text-ink">{user.name}</p>

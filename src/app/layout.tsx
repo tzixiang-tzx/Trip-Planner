@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { themeInitScript } from "@/lib/theme";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -7,14 +8,20 @@ export const metadata: Metadata = {
     "A calm little home for a group trip: the plan, the notices, who owes what, and every photo from the road.",
 };
 
+// The two --c-sand values, so the browser chrome matches the page it frames.
 export const viewport: Viewport = {
-  themeColor: "#f4efe6",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f7f0e4" },
+    { media: "(prefers-color-scheme: dark)", color: "#1a1613" },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    // The inline script below writes data-theme before React sees the document.
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link

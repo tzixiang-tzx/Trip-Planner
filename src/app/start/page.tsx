@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/session";
 import { db } from "@/lib/db";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { StartPanels } from "./start-panels";
 
 export default async function StartPage() {
@@ -15,7 +16,10 @@ export default async function StartPage() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-3xl flex-col justify-center px-5 py-12">
       <div className="rise">
-        <p className="label-xs">Wanderlist</p>
+        <div className="flex items-center justify-between gap-4">
+          <p className="label-xs">Wanderlist</p>
+          <ThemeToggle />
+        </div>
         <h1 className="mt-3 font-display text-4xl text-ink sm:text-5xl">
           Hello {user.name.split(" ")[0]} — where are we going?
         </h1>
