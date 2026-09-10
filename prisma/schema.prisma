@@ -1,0 +1,151 @@
+// Wanderlist — trip companion for a group of friends.
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  accent       String   @default("sage")
+  createdAt    DateTime @default(now())
+
+  memberships   Membership[]
+  itineraryItems ItineraryItem[]
+  announcements Announcement[]
+  comments      Comment[]
+  paidExpenses  Expense[]        @relation("PaidBy")
+  shares        ExpenseShare[]
+  media         MediaItem[]
+}
+
+model Trip {
+  id          String   @id @default(cuid())
+  name        String
+  destination String
+  blurb       String   @default("")
+  startDate   DateTime
+  endDate     DateTime
+  currency    String   @default("SGD")
+  inviteCode  String   @unique
+  createdAt   DateTime @default(now())
+
+  members       Membership[]
+  itineraryItems ItineraryItem[]
+  announcements Announcement[]
+  expenses      Expense[]
+  media         MediaItem[]
+}
+
+model Membership {
+  id       String   @id @default(cuid())
+  userId   String
+  tripId   String
+  role     String   @default("traveller") // organiser | traveller
+  joinedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tripId])
+}
+
+model ItineraryItem {
+  id          String   @id @default(cuid())
+  tripId      String
+  day         DateTime // date bucket (midnight UTC)
+  startTime   String   @default("") // "09:30"
+  endTime     String   @default("")
+  title       String
+  location    String   @default("")
+  notes       String   @default("")
+  category    String   @default("explore") // travel | stay | food | explore | note
+  createdById String
+  createdAt   DateTime @default(now())
+
+  trip      Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  createdBy User @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([tripId, day])
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  tripId    String
+  authorId  String
+  title     String
+  body      String
+  pinned    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  trip     Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments Comment[]
+
+  @@index([tripId, createdAt])
+}
+
+model Comment {
+  id             String   @id @default(cuid())
+  announcementId String
+  authorId       String
+  body           String
+  createdAt      DateTime @default(now())
+
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  author       User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  tripId      String
+  description String
+  amountCents Int
+  category    String   @default("general") // food | stay | travel | fun | general
+  paidById    String
+  spentOn     DateTime @default(now())
+  notes       String   @default("")
+  createdAt   DateTime @default(now())
+
+  trip   Trip           @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  paidBy User           @relation("PaidBy", fields: [paidById], references: [id], onDelete: Cascade)
+  shares ExpenseShare[]
+
+  @@index([tripId, spentOn])
+}
+
+model ExpenseShare {
+  id         String @id @default(cuid())
+  expenseId  String
+  userId     String
+  shareCents Int
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([expenseId, userId])
+}
+
+model MediaItem {
+  id           String   @id @default(cuid())
+  tripId       String
+  uploaderId   String
+  storedName   String   @unique
+  originalName String
+  mimeType     String
+  sizeBytes    Int
+  kind         String // photo | video
+  caption      String   @default("")
+  createdAt    DateTime @default(now())
+
+  trip     Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  uploader User @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+
+  @@index([tripId, createdAt])
+}

@@ -1,0 +1,336 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------
+   Wanderlist palette — warm sand, sea glass, late-afternoon sun.
+   --------------------------------------------------------------- */
+:root {
+  color-scheme: light;
+  --c-sand: #f7f0e4;
+  --c-sand-deep: #ece2d0;
+  --c-paper: #fffdf9;
+  --c-ink: #2b2724;
+  --c-muted: #7d7469;
+  --c-line: #e5dbc8;
+  --c-sage: #6d8b68;
+  --c-sage-soft: #e3ebdf;
+  --c-clay: #bd6f4d;
+  --c-clay-soft: #f8e5d9;
+  --c-sun: #d9a13c;
+  --c-sun-soft: #fbeed0;
+  --c-sea: #4d8a99;
+  --c-sea-soft: #dcecef;
+  --c-coral: #dd7f63;
+  --c-lagoon: #5aa79c;
+  --c-sky: #8fc0d4;
+  --c-shadow: 43 39 36;
+  --frame: #fffdf9;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --c-sand: #1a1613;
+    --c-sand-deep: #13100e;
+    --c-paper: #241f1a;
+    --c-ink: #f4eee4;
+    --c-muted: #a89c8e;
+    --c-line: #383026;
+    --c-sage: #9dbb96;
+    --c-sage-soft: #2b3328;
+    --c-clay: #e09a76;
+    --c-clay-soft: #3d2c22;
+    --c-sun: #e8bd66;
+    --c-sun-soft: #3d3220;
+    --c-sea: #8ab6c4;
+    --c-sea-soft: #24333a;
+    --c-coral: #e79c83;
+    --c-lagoon: #79bfb3;
+    --c-sky: #7ea9bd;
+    --c-shadow: 0 0 0;
+    --frame: #2f2822;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --c-sand: #1a1613;
+  --c-sand-deep: #13100e;
+  --c-paper: #241f1a;
+  --c-ink: #f4eee4;
+  --c-muted: #a89c8e;
+  --c-line: #383026;
+  --c-sage: #9dbb96;
+  --c-sage-soft: #2b3328;
+  --c-clay: #e09a76;
+  --c-clay-soft: #3d2c22;
+  --c-sun: #e8bd66;
+  --c-sun-soft: #3d3220;
+  --c-sea: #8ab6c4;
+  --c-sea-soft: #24333a;
+  --c-coral: #e79c83;
+  --c-lagoon: #79bfb3;
+  --c-sky: #7ea9bd;
+  --c-shadow: 0 0 0;
+  --frame: #2f2822;
+}
+
+@theme inline {
+  --color-sand: var(--c-sand);
+  --color-sand-deep: var(--c-sand-deep);
+  --color-paper: var(--c-paper);
+  --color-ink: var(--c-ink);
+  --color-muted: var(--c-muted);
+  --color-line: var(--c-line);
+  --color-sage: var(--c-sage);
+  --color-sage-soft: var(--c-sage-soft);
+  --color-clay: var(--c-clay);
+  --color-clay-soft: var(--c-clay-soft);
+  --color-sun: var(--c-sun);
+  --color-sun-soft: var(--c-sun-soft);
+  --color-sea: var(--c-sea);
+  --color-sea-soft: var(--c-sea-soft);
+  --color-coral: var(--c-coral);
+  --color-lagoon: var(--c-lagoon);
+  --color-sky: var(--c-sky);
+
+  --font-display: "Fraunces", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-hand: "Caveat", "Segoe Script", "Bradley Hand", cursive;
+
+  --radius-soft: 1.25rem;
+  --radius-pill: 999px;
+}
+
+* {
+  border-color: var(--c-line);
+}
+
+body {
+  background-color: var(--c-sand);
+  color: var(--c-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
+}
+
+/* Late-afternoon light: sun high on the left, sea haze along the bottom. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: radial-gradient(
+      ellipse 70% 45% at 12% -5%,
+      color-mix(in srgb, var(--c-sun) 30%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 60% 40% at 88% 0%,
+      color-mix(in srgb, var(--c-coral) 22%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 100% 55% at 50% 108%,
+      color-mix(in srgb, var(--c-sea) 20%, transparent),
+      transparent 72%
+    );
+}
+
+h1, h2, h3, .font-display {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+}
+
+@utility handwrite {
+  font-family: var(--font-hand);
+  font-size: 1.35em;
+  line-height: 1.15;
+}
+
+/* ---------------------------------------------------------------
+   Component primitives
+   --------------------------------------------------------------- */
+@utility card {
+  background-color: var(--c-paper);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-soft);
+  box-shadow: 0 1px 2px rgb(var(--c-shadow) / 0.04), 0 12px 28px -18px rgb(var(--c-shadow) / 0.22);
+}
+
+/* A postcard: dashed edge and a faint stamp in the corner. */
+@utility postcard {
+  position: relative;
+  background-color: var(--c-paper);
+  border: 1px dashed color-mix(in srgb, var(--c-clay) 40%, var(--c-line));
+  border-radius: var(--radius-soft);
+  box-shadow: 0 1px 2px rgb(var(--c-shadow) / 0.04), 0 14px 30px -20px rgb(var(--c-shadow) / 0.25);
+}
+
+/* Photos sit in a paper frame, slightly askew, like they've been laid out on a table. */
+@utility polaroid {
+  background-color: var(--frame);
+  padding: 0.5rem 0.5rem 1.6rem;
+  border-radius: 0.4rem;
+  box-shadow: 0 1px 2px rgb(var(--c-shadow) / 0.08), 0 14px 26px -16px rgb(var(--c-shadow) / 0.35);
+  rotate: var(--tilt, 0deg);
+  transition: rotate 0.35s cubic-bezier(0.22, 1, 0.36, 1), translate 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.35s ease;
+}
+
+/* Straighten and lift the one you're looking at. */
+.polaroid:hover,
+.polaroid:focus-within {
+  rotate: 0deg;
+  translate: 0 -5px;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgb(var(--c-shadow) / 0.1), 0 22px 38px -18px rgb(var(--c-shadow) / 0.45);
+}
+
+@utility field {
+  width: 100%;
+  background-color: color-mix(in srgb, var(--c-sand) 55%, var(--c-paper));
+  border: 1px solid var(--c-line);
+  border-radius: 0.85rem;
+  padding: 0.6rem 0.85rem;
+  font-size: 0.9rem;
+  color: var(--c-ink);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+input.field::placeholder,
+textarea.field::placeholder {
+  color: color-mix(in srgb, var(--c-muted) 75%, transparent);
+}
+
+.field:focus {
+  border-color: var(--c-lagoon);
+  background-color: var(--c-paper);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-lagoon) 22%, transparent);
+}
+
+@utility btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border-radius: var(--radius-pill);
+  padding: 0.6rem 1.15rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@utility btn-primary {
+  background-image: linear-gradient(135deg, var(--c-clay), color-mix(in srgb, var(--c-coral) 70%, var(--c-sun)));
+  color: #fffdf9;
+  box-shadow: 0 10px 22px -14px color-mix(in srgb, var(--c-clay) 90%, black);
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+@utility btn-ghost {
+  background-color: transparent;
+  border-color: var(--c-line);
+  color: var(--c-ink);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--c-sand) 70%, transparent);
+  border-color: color-mix(in srgb, var(--c-lagoon) 45%, var(--c-line));
+}
+
+@utility chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: var(--radius-pill);
+  padding: 0.2rem 0.7rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  border: 1px solid var(--c-line);
+}
+
+@utility label-xs {
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+}
+
+/* A row of stitched dashes, like a flight path on a map. */
+@utility flight-path {
+  height: 1px;
+  background-image: repeating-linear-gradient(
+    to right,
+    color-mix(in srgb, var(--c-sea) 55%, transparent) 0 7px,
+    transparent 7px 14px
+  );
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@utility rise {
+  animation: rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes drift {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+::selection {
+  background: color-mix(in srgb, var(--c-sun) 40%, transparent);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--c-muted) 30%, transparent);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
