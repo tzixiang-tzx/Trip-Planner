@@ -3,11 +3,21 @@ import { requireTrip } from "@/lib/session";
 import { timeAgo } from "@/lib/dates";
 import { deleteAnnouncement, togglePin } from "@/actions/announcements";
 import { Avatar } from "@/components/avatar";
+import { Pagination } from "@/components/pagination";
+import { clampPage, parsePage, skipFor, totalPagesFor, PAGE_SIZE } from "@/lib/pagination";
 import { ComposeAnnouncement } from "./compose";
 import { CommentThread } from "./comment-thread";
 
-export default async function AnnouncementsPage() {
+export default async function AnnouncementsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const { trip, user } = await requireTrip();
+  const { page: pageParam } = await searchParams;
+
+  const total = await db.announcement.count({ where: { tripId: trip.id } });
+  const page = clampPage(parsePage(pageParam), total);
 
   const announcements = await db.announcement.findMany({
     where: { tripId: trip.id },
@@ -19,6 +29,8 @@ export default async function AnnouncementsPage() {
       },
     },
     orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
+    skip: skipFor(page),
+    take: PAGE_SIZE,
   });
 
   return (
@@ -105,6 +117,8 @@ export default async function AnnouncementsPage() {
           ))}
         </div>
       )}
+
+      <Pagination page={page} totalPages={totalPagesFor(total)} basePath="/announcements" />
     </div>
   );
 }

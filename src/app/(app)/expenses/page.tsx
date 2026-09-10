@@ -5,17 +5,44 @@ import { settleUp, type Balance } from "@/lib/settle";
 import { costCategory } from "@/lib/categories";
 import { isoDay } from "@/lib/dates";
 import { Avatar } from "@/components/avatar";
+import { Pagination } from "@/components/pagination";
+import { clampPage, parsePage, skipFor, totalPagesFor, PAGE_SIZE } from "@/lib/pagination";
 import { AddExpense } from "./add-expense";
 import { ExpenseTable } from "./expense-table";
 
-export default async function ExpensesPage() {
+export default async function ExpensesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const { trip, user } = await requireTrip();
+  const { page: pageParam } = await searchParams;
 
-  const [memberships, expenses] = await Promise.all([
+  const expenseCount = await db.expense.count({ where: { tripId: trip.id } });
+  const page = clampPage(parsePage(pageParam), expenseCount);
+
+  // Everyone starts square; each expense credits the payer and debits the sharers.
+  // Balances are totalled with aggregate queries over every expense/share for the trip,
+  // independent of the paginated list below, so they stay correct across all pages.
+  const [memberships, paidTotals, owedTotals, spentAgg, expenses] = await Promise.all([
     db.membership.findMany({
       where: { tripId: trip.id },
       include: { user: { select: { id: true, name: true, accent: true } } },
       orderBy: { joinedAt: "asc" },
+    }),
+    db.expense.groupBy({
+      by: ["paidById"],
+      where: { tripId: trip.id },
+      _sum: { amountCents: true },
+    }),
+    db.expenseShare.groupBy({
+      by: ["userId"],
+      where: { expense: { tripId: trip.id } },
+      _sum: { shareCents: true },
+    }),
+    db.expense.aggregate({
+      where: { tripId: trip.id },
+      _sum: { amountCents: true },
     }),
     db.expense.findMany({
       where: { tripId: trip.id },
@@ -24,40 +51,31 @@ export default async function ExpensesPage() {
         shares: { include: { user: { select: { id: true, name: true, accent: true } } } },
       },
       orderBy: [{ spentOn: "desc" }, { createdAt: "desc" }],
+      skip: skipFor(page),
+      take: PAGE_SIZE,
     }),
   ]);
 
   const members = memberships.map((m) => m.user);
   const currency = trip.currency;
 
-  // Everyone starts square; each expense credits the payer and debits the sharers.
-  const tally = new Map<string, { paid: number; owed: number }>(
-    members.map((m) => [m.id, { paid: 0, owed: 0 }]),
-  );
-
-  for (const expense of expenses) {
-    const payer = tally.get(expense.paidById);
-    if (payer) payer.paid += expense.amountCents;
-
-    for (const share of expense.shares) {
-      const entry = tally.get(share.userId);
-      if (entry) entry.owed += share.shareCents;
-    }
-  }
+  const paidByUser = new Map(paidTotals.map((t) => [t.paidById, t._sum.amountCents ?? 0]));
+  const owedByUser = new Map(owedTotals.map((t) => [t.userId, t._sum.shareCents ?? 0]));
 
   const balances: Balance[] = members.map((m) => {
-    const entry = tally.get(m.id) ?? { paid: 0, owed: 0 };
+    const paid = paidByUser.get(m.id) ?? 0;
+    const owed = owedByUser.get(m.id) ?? 0;
     return {
       userId: m.id,
       name: m.name,
-      paidCents: entry.paid,
-      owedCents: entry.owed,
-      netCents: entry.paid - entry.owed,
+      paidCents: paid,
+      owedCents: owed,
+      netCents: paid - owed,
     };
   });
 
   const transfers = settleUp(balances);
-  const totalCents = expenses.reduce((sum, e) => sum + e.amountCents, 0);
+  const totalCents = spentAgg._sum.amountCents ?? 0;
   const yourBalance = balances.find((b) => b.userId === user.id);
   const largestSwing = Math.max(1, ...balances.map((b) => Math.abs(b.netCents)));
   const accentOf = new Map(members.map((m) => [m.id, m.accent]));
@@ -79,7 +97,7 @@ export default async function ExpensesPage() {
           <p className="label-xs">Spent together</p>
           <p className="mt-2 font-display text-3xl text-ink">{formatMoney(totalCents, currency)}</p>
           <p className="mt-1 text-xs text-muted">
-            across {expenses.length} {expenses.length === 1 ? "item" : "items"}
+            across {expenseCount} {expenseCount === 1 ? "item" : "items"}
           </p>
         </div>
 
@@ -216,6 +234,8 @@ export default async function ExpensesPage() {
           })),
         }))}
       />
+
+      <Pagination page={page} totalPages={totalPagesFor(expenseCount)} basePath="/expenses" />
     </div>
   );
 }
