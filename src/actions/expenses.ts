@@ -56,6 +56,54 @@ export async function createExpense(formData: FormData) {
   revalidatePath("/expenses");
 }
 
+export async function updateExpense(formData: FormData) {
+  const { trip, user } = await requireTrip();
+
+  const id = str(formData, "id");
+  const description = str(formData, "description");
+  const amountCents = toMinorUnits(str(formData, "amount"), trip.currency);
+  if (!id || !description || amountCents <= 0) return;
+
+  const existing = await db.expense.findFirst({ where: { id, tripId: trip.id } });
+  if (!existing) return;
+
+  const memberIds = (
+    await db.membership.findMany({ where: { tripId: trip.id }, select: { userId: true } })
+  ).map((m) => m.userId);
+
+  const requested = formData.getAll("participants").filter((v): v is string => typeof v === "string");
+  const participants = requested.filter((id) => memberIds.includes(id));
+  const splitBetween = participants.length > 0 ? participants : memberIds;
+  if (splitBetween.length === 0) return;
+
+  const paidByRaw = str(formData, "paidById");
+  const paidById = memberIds.includes(paidByRaw) ? paidByRaw : user.id;
+
+  const category = str(formData, "category");
+  const spentOnRaw = str(formData, "spentOn");
+  const spentOn = /^\d{4}-\d{2}-\d{2}$/.test(spentOnRaw) ? new Date(`${spentOnRaw}T12:00:00.000Z`) : new Date();
+
+  const amounts = splitEvenly(amountCents, splitBetween.length);
+
+  await db.expense.update({
+    where: { id },
+    data: {
+      description,
+      amountCents,
+      paidById,
+      spentOn,
+      notes: str(formData, "notes"),
+      category: CATEGORIES.includes(category) ? category : "general",
+      shares: {
+        deleteMany: {},
+        create: splitBetween.map((userId, i) => ({ userId, shareCents: amounts[i] })),
+      },
+    },
+  });
+
+  revalidatePath("/expenses");
+}
+
 export async function deleteExpense(formData: FormData) {
   const { trip } = await requireTrip();
   const id = str(formData, "id");

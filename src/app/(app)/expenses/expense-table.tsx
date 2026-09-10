@@ -1,27 +1,46 @@
 "use client";
 
 import { useState } from "react";
-import { deleteExpense } from "@/actions/expenses";
-import { formatMoney } from "@/lib/money";
+import { deleteExpense, updateExpense } from "@/actions/expenses";
+import { formatMoney, minorUnitsPer } from "@/lib/money";
 import { formatDay } from "@/lib/dates";
 import { Avatar } from "@/components/avatar";
+import { Modal } from "@/components/modal";
+import { SubmitButton } from "@/components/submit-button";
+import { ExpenseFields } from "./expense-fields";
+
+type Member = { id: string; name: string; accent: string };
 
 type Row = {
   id: string;
   description: string;
   notes: string;
   amountCents: number;
+  category: string;
   categoryLabel: string;
   categoryChip: string;
   spentOn: string;
+  paidById: string;
   paidByName: string;
   paidByAccent: string;
   yourShareCents: number;
   shares: { userId: string; name: string; accent: string; shareCents: number }[];
 };
 
-export function ExpenseTable({ rows, currency }: { rows: Row[]; currency: string }) {
+export function ExpenseTable({
+  rows,
+  currency,
+  members,
+  currentUserId,
+}: {
+  rows: Row[];
+  currency: string;
+  members: Member[];
+  currentUserId: string;
+}) {
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [editing, setEditing] = useState<Row | null>(null);
+  const [deleting, setDeleting] = useState<Row | null>(null);
 
   if (rows.length === 0) {
     return (
@@ -32,6 +51,16 @@ export function ExpenseTable({ rows, currency }: { rows: Row[]; currency: string
         </p>
       </section>
     );
+  }
+
+  async function handleUpdate(formData: FormData) {
+    await updateExpense(formData);
+    setEditing(null);
+  }
+
+  async function handleDelete(formData: FormData) {
+    await deleteExpense(formData);
+    setDeleting(null);
   }
 
   return (
@@ -131,15 +160,22 @@ export function ExpenseTable({ rows, currency }: { rows: Row[]; currency: string
                     <p className="text-xs text-muted">
                       {row.paidByName} paid {formatMoney(row.amountCents, currency)} up front.
                     </p>
-                    <form action={deleteExpense}>
-                      <input type="hidden" name="id" value={row.id} />
+                    <div className="flex items-center gap-1">
                       <button
-                        type="submit"
+                        type="button"
+                        onClick={() => setEditing(row)}
+                        className="rounded-full px-3 py-1.5 text-xs text-muted transition hover:bg-sand hover:text-ink"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeleting(row)}
                         className="rounded-full px-3 py-1.5 text-xs text-muted transition hover:bg-clay-soft hover:text-clay"
                       >
                         Delete this cost
                       </button>
-                    </form>
+                    </div>
                   </div>
                 </div>
               )}
@@ -147,6 +183,62 @@ export function ExpenseTable({ rows, currency }: { rows: Row[]; currency: string
           );
         })}
       </ul>
+
+      <Modal
+        open={editing !== null}
+        onClose={() => setEditing(null)}
+        title="Edit cost"
+        description="Whoever paid, and who it was for."
+      >
+        {editing && (
+          <form action={handleUpdate} className="space-y-4">
+            <input type="hidden" name="id" value={editing.id} />
+            <ExpenseFields
+              members={members}
+              currency={currency}
+              currentUserId={currentUserId}
+              values={{
+                description: editing.description,
+                amount: (editing.amountCents / minorUnitsPer(currency)).toString(),
+                spentOn: editing.spentOn,
+                paidById: editing.paidById,
+                category: editing.category,
+                notes: editing.notes,
+                participants: editing.shares.map((s) => s.userId),
+              }}
+            />
+            <div className="flex justify-end gap-2 pt-1">
+              <button type="button" className="btn btn-ghost" onClick={() => setEditing(null)}>
+                Cancel
+              </button>
+              <SubmitButton pendingLabel="Saving…">Save changes</SubmitButton>
+            </div>
+          </form>
+        )}
+      </Modal>
+
+      <Modal
+        open={deleting !== null}
+        onClose={() => setDeleting(null)}
+        title="Delete this cost?"
+        description={
+          deleting
+            ? `"${deleting.description}" (${formatMoney(deleting.amountCents, currency)}) will be removed and everyone's balance will be recalculated. This can't be undone.`
+            : undefined
+        }
+      >
+        {deleting && (
+          <form action={handleDelete} className="flex justify-end gap-2">
+            <input type="hidden" name="id" value={deleting.id} />
+            <button type="button" className="btn btn-ghost" onClick={() => setDeleting(null)}>
+              Keep it
+            </button>
+            <SubmitButton className="btn btn-primary" pendingLabel="Deleting…">
+              Yes, delete it
+            </SubmitButton>
+          </form>
+        )}
+      </Modal>
     </section>
   );
 }
