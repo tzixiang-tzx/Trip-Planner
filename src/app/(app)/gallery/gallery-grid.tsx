@@ -22,7 +22,15 @@ type Filter = "all" | "photo" | "video";
 /** Fixed tilts so the wall of photos looks hand-laid rather than gridded. */
 const TILTS = [-1.6, 1.1, -0.7, 1.7, -1.2, 0.8];
 
-export function GalleryGrid({ items, currentUserId }: { items: Item[]; currentUserId: string }) {
+export function GalleryGrid({
+  items,
+  currentUserId,
+  totalCount,
+}: {
+  items: Item[];
+  currentUserId: string;
+  totalCount: number;
+}) {
   const [filter, setFilter] = useState<Filter>("all");
   const [lightbox, setLightbox] = useState<Item | null>(null);
 
@@ -42,7 +50,7 @@ export function GalleryGrid({ items, currentUserId }: { items: Item[]; currentUs
     return () => document.removeEventListener("keydown", onKey);
   }, [lightbox, visible]);
 
-  if (items.length === 0) {
+  if (totalCount === 0) {
     return (
       <div className="card px-6 py-20 text-center">
         <p className="font-display text-xl text-ink">The album is empty</p>
@@ -60,7 +68,7 @@ export function GalleryGrid({ items, currentUserId }: { items: Item[]; currentUs
       <div className="flex gap-1.5">
         {(
           [
-            ["all", `Everything (${items.length})`],
+            ["all", `Everything (${totalCount})`],
             ["photo", "Photos"],
             ["video", "Videos"],
           ] as [Filter, string][]
