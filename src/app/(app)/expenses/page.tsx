@@ -197,14 +197,18 @@ export default async function ExpensesPage() {
 
       <ExpenseTable
         currency={currency}
+        members={members}
+        currentUserId={user.id}
         rows={expenses.map((expense) => ({
           id: expense.id,
           description: expense.description,
           notes: expense.notes,
           amountCents: expense.amountCents,
+          category: expense.category,
           categoryLabel: costCategory(expense.category).label,
           categoryChip: costCategory(expense.category).chip,
           spentOn: isoDay(expense.spentOn),
+          paidById: expense.paidById,
           paidByName: expense.paidBy.name,
           paidByAccent: expense.paidBy.accent,
           yourShareCents: expense.shares.find((s) => s.userId === user.id)?.shareCents ?? 0,
